@@ -288,52 +288,107 @@ with tab1:
     question = st.text_input("Type your question", key="main_question")
     universal_mode = st.checkbox("Universal SQL mode (no DB)")
     manual_sql = st.text_area("Or paste SQL manually", height=100)
+
     if st.button("Generate & Run"):
-        chat_entry={"question":question.strip(),"sql":None,"rows":None,"explanation":None,"ok":False}
+        chat_entry = {"question": question.strip(), "sql": None, "rows": None, "explanation": None, "ok": False}
         schema_context = schema_text if conn else "No schema"
+
+        # ✅ 1. Early validation: reject nonsense or too short inputs
+        invalid_prompt = (
+            not question.strip()
+            or len(question.split()) < 2
+            or any(c in question for c in "!@#$%^&*()_=+[]{}<>?/\\|")
+            or question.strip().isdigit()
+        )
+        gibberish_patterns = [
+            "asdf", "qwer", "zxcv", "emhf", "vkwef", "random",
+            "test", "hello", "ai", "emotion", "amd", "who are you"
+        ]
+        if invalid_prompt or any(pat in question.lower() for pat in gibberish_patterns):
+            st.error("❌ Invalid prompt — please enter a meaningful data-related question.")
+            chat_entry["ok"] = False
+            st.session_state.chat_history.append(chat_entry)
+            st.stop()
+
+        # ✅ 2. Manual SQL check
         sql_to_run = manual_sql.strip() if manual_sql.strip() else None
+
+        # ✅ 3. Generate SQL if not manually provided
         if sql_to_run is None and genai:
             try:
                 sql_to_run = generate_sql_with_gemini(question.strip(), schema_context, st.session_state.chat_history)
             except Exception as e:
                 st.warning(f"SQL generation unavailable: {e}")
+
+        # ✅ 4. Validate generated SQL
         if sql_to_run:
-            chat_entry["sql"]=sql_to_run
+            chat_entry["sql"] = sql_to_run
             st.code(sql_to_run, language="sql")
-            if universal_mode or conn is None:
-                chat_entry["ok"]=True
+
+            # 🚫 Reject meaningless SQL (e.g. SELECT 1, SELECT 'text', etc.)
+            fake_sql_patterns = [
+                "select 1", "select '", 'select "', "select * from dual",
+                "ai", "response", "emotion", "hello", "world"
+            ]
+            if any(pat in sql_to_run.lower() for pat in fake_sql_patterns):
+                st.error("❌ Invalid query — unrelated or meaningless SQL generated.")
+                chat_entry["ok"] = False
+                st.session_state.chat_history.append(chat_entry)
+                st.stop()
+
+            elif universal_mode or conn is None:
+                chat_entry["ok"] = True
                 st.success("SQL generated (universal mode).")
                 st.session_state.chat_history.append(chat_entry)
+
             else:
                 if not is_safe_sql(sql_to_run):
                     st.error("Unsafe SQL — only SELECT allowed.")
-                    chat_entry["ok"]=False
+                    chat_entry["ok"] = False
+
                 elif not validate_sql_with_explain(conn, sql_to_run):
                     st.error("SQL invalid (EXPLAIN failed).")
-                    chat_entry["ok"]=False
+                    chat_entry["ok"] = False
+
                 else:
                     try:
-                        df=pd.read_sql_query(sql_to_run, conn)
-                        chat_entry["rows"]=len(df)
-                        chat_entry["ok"]=True
-                        st.dataframe(df, use_container_width=True)
-                        # explanation guard
-                        if genai:
-                            try:
-                                prompt=f"Explain key findings from this result for question: {question}\nPreview:\n{df.head(5).to_string(index=False)}"
-                                model=genai.GenerativeModel("gemini-2.5-flash")
-                                resp=model.generate_content(prompt)
-                                chat_entry["explanation"]=resp.text.strip()
-                                st.info(resp.text.strip())
-                            except:
-                                st.info("AI explanation unavailable.")
-                        st.session_state.last_result={"columns":df.columns.tolist(),"records":df.to_dict(orient="records")}
+                        df = pd.read_sql_query(sql_to_run, conn)
+
+                        # 🚫 Reject empty or fake outputs
+                        if (
+                            df.empty
+                            or (df.shape[1] == 1 and df.columns[0].lower() in ["response", "result", "output"])
+                        ):
+                            st.error("Invalid query — not based on dataset tables.")
+                            chat_entry["ok"] = False
+                        else:
+                            chat_entry["rows"] = len(df)
+                            chat_entry["ok"] = True
+                            st.dataframe(df, use_container_width=True)
+
+                            # AI Explanation
+                            if genai:
+                                try:
+                                    prompt = f"Explain key findings from this result for question: {question}\nPreview:\n{df.head(5).to_string(index=False)}"
+                                    model = genai.GenerativeModel("gemini-2.5-flash")
+                                    resp = model.generate_content(prompt)
+                                    chat_entry["explanation"] = resp.text.strip()
+                                    st.info(resp.text.strip())
+                                except:
+                                    st.info("AI explanation unavailable.")
+
+                            st.session_state.last_result = {
+                                "columns": df.columns.tolist(),
+                                "records": df.to_dict(orient="records"),
+                            }
+                            csv = df.to_csv(index=False).encode("utf-8")
+                            st.download_button("Download CSV", csv, file_name="query_results.csv")
+
                         st.session_state.chat_history.append(chat_entry)
-                        csv=df.to_csv(index=False).encode("utf-8")
-                        st.download_button("Download CSV", csv, file_name="query_results.csv")
+
                     except Exception as e:
                         st.error(f"Query execution error: {e}")
-                        chat_entry["ok"]=False
+                        chat_entry["ok"] = False
                         st.session_state.chat_history.append(chat_entry)
         else:
             st.info("No SQL to run. Paste SQL manually or LLM unavailable.")
