@@ -5,4 +5,5 @@ matplotlib
 plotly
 openpyxl
 networkx
+sqlalchemy
 
