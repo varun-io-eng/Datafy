@@ -1,9 +1,8 @@
 streamlit
 pandas
 numpy
-matplotlib
 plotly
-openpyxl
-networkx
 sqlalchemy
-
+networkx
+openpyxl
+google-generativeai
