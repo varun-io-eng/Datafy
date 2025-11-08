@@ -1,0 +1,8 @@
+streamlit
+pandas
+numpy
+matplotlib
+plotly
+openpyxl    # if using Excel files
+sqlite3     # built-in, no need to install
+
