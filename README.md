@@ -1,35 +1,41 @@
-# 🧠 Datafy: AI-Powered Text-to-SQL Assistant  
-### Transform Natural Language into SQL Queries — Instantly  
+# 🧠 Datafy: AI-Powered Text-to-SQL & Data Exploration Assistant  
+### Transform Natural Language into SQL Queries, Visual Insights, and Interactive Dashboards  
 
 ---
 
 ## 🧾 Overview  
-**Datafy** is an AI-powered analytics web app that converts **natural language questions into SQL queries** and executes them directly on uploaded datasets (CSV, Excel, or SQLite).  
-It empowers **non-technical users** to explore data, extract insights, and visualize results — **without writing a single line of SQL.**
+**Datafy** is an AI-powered data analytics web app built with **Streamlit**, designed to turn **natural language questions into SQL queries** — and even go beyond by generating insights, visual dashboards, and database schema visualizations.  
+It enables **non-technical users** and **analysts** to explore structured data intuitively without needing to write SQL code or use complex BI tools.
 
 ---
 
 ## 🚀 Key Features  
-- 🗂️ Upload CSV, Excel, or SQLite database files  
-- 💬 Ask analytical questions in plain English  
-- 🤖 Automatically generate SQL queries using **Google Gemini API**  
-- 🔒 Safe query execution (only `SELECT` statements allowed)  
-- 📊 Create interactive visualizations using Plotly and Matplotlib  
-- 🧩 AI-generated explanations for query results  
-- 💾 Download results as CSV files  
-- 🕒 View query and answer history for better tracking  
+- 🗂️ **Upload Data Files** — Supports CSV, Excel, and SQLite database formats  
+- 💬 **Ask Questions in Plain English** — Automatically converts natural language into SQL queries using **Google Gemini API**  
+- 🧠 **Universal SQL Mode** — Generate SQL even without uploading any dataset  
+- 🔒 **Safe Query Execution** — Only `SELECT` statements are allowed  
+- 📊 **Interactive Dashboards** — Auto-visualize results with charts and graphs (Plotly & Matplotlib)  
+- 🧩 **AI-Powered Explanations** — Get natural-language insights from your query results  
+- 🧱 **Schema & ER Diagram View** — Visualize database tables, columns, and relationships  
+- 🕒 **Chat History Panel** — View and reuse previous queries and their results  
+- 💾 **Downloadable Data** — Export results instantly as CSV  
+- 🎯 **Streamlined UI** — Clean, interactive, and professional interface built in Streamlit  
 
 ---
 
 ## 🧠 Why It Matters  
-Many organizations and analysts still rely heavily on **Excel, CSV files, and manual SQL queries** for analytics.  
-**Datafy** bridges the gap between **natural language and structured data**, enabling business users and analysts to extract insights quickly — without needing SQL expertise.  
+Data professionals and analysts spend hours crafting and debugging SQL queries.  
+**Datafy** bridges the gap between **human language and data logic**, empowering users to:  
+- Analyze data faster using natural questions  
+- Understand database relationships visually  
+- Generate dashboards and insights in real time  
+- Enable smarter decision-making for both technical and non-technical teams  
 
-This project is especially useful for:  
-- Business analysts and decision-makers  
-- Students and data enthusiasts  
-- Data teams handling quick exploratory queries  
-- Startups and small firms without a BI stack  
+This app is especially useful for:  
+- 📈 Business analysts and managers  
+- 🎓 Students and researchers  
+- 🧮 Data teams handling ad-hoc analytics  
+- 🚀 Startups and SMBs without full BI platforms  
 
 ---
 
@@ -40,6 +46,7 @@ This project is especially useful for:
 - **Data Handling:** Pandas, NumPy, OpenPyXL  
 - **Visualization:** Plotly, Matplotlib  
 - **AI Integration:** Google Gemini API  
+- **ER Diagrams:** NetworkX + Graphviz  
 - **Deployment:** Streamlit Cloud  
 - **Version Control:** Git + GitHub  
 
@@ -47,30 +54,54 @@ This project is especially useful for:
 
 ## ⚙️ How It Works  
 **1️⃣ Upload Dataset**  
-- Choose from CSV, Excel, or SQLite database files.  
+- Upload CSV, Excel, or SQLite database files.  
 
-**2️⃣ Ask a Question**  
+**2️⃣ Ask a Question or Enter SQL**  
 - Type your question in plain English.  
-- Example: *“Show total sales by region”*  
+- Or manually paste an SQL query (universal SQL mode).  
+- Example: *“Show average revenue per region in 2024.”*  
 
 **3️⃣ SQL Generation**  
 - The app uses **Gemini AI** to generate SQL queries automatically.  
-- Only safe `SELECT` statements are allowed for execution.  
+- Queries are validated for safety before execution.  
 
 **4️⃣ Query Execution & Visualization**  
-- The query runs on your uploaded dataset.  
-- Results are displayed in an interactive table with charts.  
+- Runs valid queries on the uploaded data.  
+- Displays results as an interactive table and chart.  
 
-**5️⃣ Insight Explanation**  
-- The AI model provides a short natural-language explanation of your results.  
+**5️⃣ Insights & Dashboards**  
+- Automatically creates meaningful charts and summaries.  
+- Explains patterns and key findings using AI.  
+
+**6️⃣ Schema & ER Diagram**  
+- Visualizes table structures and relationships.  
+- Helps users understand data organization quickly.  
+
+**7️⃣ Chat History & Export**  
+- Stores all previous questions, SQLs, and results.  
+- Download query results as CSV anytime.  
 
 ---
 
-## ▶️ Example Workflow  
 
+## 💡 Key Learning Outcomes  
+- Integration of **LLMs (Google Gemini)** for Text-to-SQL  
+- Safe SQL validation and sandboxed query execution  
+- Building **ER Diagrams** dynamically from schemas  
+- Streamlit-based **interactive dashboards**  
+- Combining **AI, data visualization, and databases** into one workflow  
+- Deploying a full-stack AI data assistant on **Streamlit Cloud**
 
-Results are displayed in an interactive table with charts.
+---
 
-5️⃣ Insight Explanation
+## 👨‍💻 Author  
+**Varun Khera**  
+📧 varunkhera.20@gmail.com
+💼 https://www.linkedin.com/in/varun-khera/  
+ 
 
-The AI model provides a short natural-language explanation of your results.
+---
+
+⭐ *If you found this project helpful, please star the repository!*  
+Your support motivates further improvements and innovation.
+
