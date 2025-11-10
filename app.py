@@ -500,7 +500,7 @@ if st.session_state.logged_in:
                 "Select files to upload",
                 type=["db","sqlite","csv","xlsx"],
                 accept_multiple_files=True,
-                help="Supported: SQLite, CSV, Excel,
+                help="Supported: SQLite, CSV, Excel",
                 label_visibility="collapsed"
             )
         
