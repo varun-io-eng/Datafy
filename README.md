@@ -1,4 +1,4 @@
-# 🤖 AI Text-to-SQL Pro Assistant  
+# 🤖 DATAFY- AI Text-to-SQL Pro Assistant  
 
 An **AI-powered Streamlit application** that converts natural language queries into SQL commands, executes them across multiple databases, and provides instant visual analytics with interactive dashboards.
 
