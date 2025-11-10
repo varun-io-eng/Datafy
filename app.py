@@ -236,15 +236,47 @@ if genai is not None and GOOGLE_API_KEY:
     except Exception:
         genai = None
 
-def generate_sql_with_gemini(question, schema, chat_history=None):
+def generate_sql_with_gemini(question, schema, chat_history=None, db_type="sqlite"):
     if genai is None:
         raise RuntimeError("LLM not configured.")
     if chat_history is None:
         chat_history = []
-    context = "\n".join([f"Q: {h.get('question')} → SQL: {h.get('sql')}" for h in chat_history[-3:]])
+
+    context = "\n".join([
+        f"Q: {h.get('question')} → SQL: {h.get('sql')}" 
+        for h in chat_history[-3:]
+        if h.get("sql")
+    ])
+
+    # 💡 Database-specific guidance for better SQL generation
+    db_guidelines = {
+        "sqlite": (
+            "Use only SQLite-compatible SQL. "
+            "Avoid unsupported functions like GREATEST(), LEAST(), DATE_FORMAT(), NOW(), etc. "
+            "Use CASE WHEN statements instead if needed."
+        ),
+        "mysql": (
+            "Use MySQL-compatible syntax. Functions like GREATEST(), DATE_FORMAT(), and CONCAT() are supported."
+        ),
+        "postgresql": (
+            "Use PostgreSQL syntax. Functions like GREATEST(), STRING_AGG(), and DATE_TRUNC() are supported."
+        ),
+        "mssql": (
+            "Use SQL Server syntax. Use TOP instead of LIMIT. Use CONCAT or + for string concatenation."
+        )
+    }
+
+    db_hint = db_guidelines.get(db_type.lower(), "Generate standard SQL syntax.")
+
     prompt = f"""
+You are an expert SQL query generator.
+
+Database type: {db_type.upper()}
 Schema:
 {schema}
+
+Guidelines:
+{db_hint}
 
 Conversation context:
 {context}
@@ -252,17 +284,24 @@ Conversation context:
 User question:
 {question}
 
-Return only one valid SELECT query (no explanation, no markdown).
+Return only one valid SELECT query.
+Do not include explanations, markdown, or comments.
 """
+
     model = genai.GenerativeModel("gemini-2.5-flash")
     resp = model.generate_content(prompt)
     sql = (resp.text or "").strip().replace("```sql", "").replace("```", "").strip()
+
+    # Extract and sanitize SQL
     if "select" in sql.lower():
         sql = sql[sql.lower().find("select"):]
     sql = sql.split(";")[0].strip()
+
     if not sql.lower().startswith("select"):
         raise ValueError("LLM did not produce a valid SELECT query.")
+
     return sql
+
 
 def generate_ai_explanation(question, df):
     if genai is None:
