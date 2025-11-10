@@ -496,14 +496,17 @@ if st.session_state.logged_in:
         
         col_upload, col_settings = st.columns([2, 1])
         
-        with col_upload:
-            uploaded_files = st.file_uploader(
-                "Select files to upload",
-                type=["db","sqlite","csv","xlsx"]
-                st.info("💡 Quick Tips\n\n✓ Max: 50MB\n✓ Multi-file upload")
-                help="Supported: SQLite, CSV, Excel, Images (PNG/JPG)",
-                label_visibility="collapsed"
-            )
+       with col_upload:
+         uploaded_files = st.file_uploader(
+          "Select files to upload",
+           type=["db", "sqlite", "csv", "xlsx"],
+           accept_multiple_files=True,
+           help="Supported: SQLite, CSV, Excel",
+           label_visibility="collapsed"
+    )
+
+    st.info("💡 Quick Tips\n\n✓ Max: 50MB\n✓ Multi-file upload")
+
         
         with col_settings:
             auto_normalize = st.checkbox(
