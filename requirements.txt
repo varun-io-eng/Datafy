@@ -6,3 +6,10 @@ sqlalchemy
 networkx
 openpyxl
 google-generativeai
+matplotlib
+psycopg2-binary
+pymysql
+pyodbc
+xlrd
+protobuf
+python-dotenv
