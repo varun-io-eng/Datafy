@@ -491,31 +491,29 @@ if st.session_state.logged_in:
     """, unsafe_allow_html=True)
 
     # --- Database Connection Section
-    with st.expander("📥 Data Source Management", expanded=True):
-        st.markdown("#### 📂 Upload Files")
-        
-        col_upload, col_settings = st.columns([2, 1])
-        
-       with col_upload:
-         uploaded_files = st.file_uploader(
-          "Select files to upload",
-           type=["db", "sqlite", "csv", "xlsx"],
-           accept_multiple_files=True,
-           help="Supported: SQLite, CSV, Excel",
-           label_visibility="collapsed"
-    )
+   with st.expander("📥 Data Source Management", expanded=True):
+    st.markdown("#### 📂 Upload Files")
 
-    st.info("💡 Quick Tips\n\n✓ Max: 50MB\n✓ Multi-file upload")
+    col_upload, col_settings = st.columns([2, 1])
 
-        
-        with col_settings:
-            auto_normalize = st.checkbox(
-                "🔄 Auto-Normalize Tables",
-                value=False,
-                help="Automatically normalize uploaded tables to 3NF"
-            )
-            st.info("**💡 Quick Tips**\n\n✓ Max: 50MB\n✓ Multi-file\n✓ Image OCR")
-        
+    with col_upload:
+        uploaded_files = st.file_uploader(
+            "Select files to upload",
+            type=["db", "sqlite", "csv", "xlsx"],
+            accept_multiple_files=True,
+            help="Supported: SQLite, CSV, Excel",
+            label_visibility="collapsed"
+        )
+
+        st.info("💡 Quick Tips\n\n✓ Max: 50MB\n✓ Multi-file upload")
+
+    with col_settings:
+        auto_normalize = st.checkbox(
+            "🔄 Auto-Normalize Tables",
+            value=False,
+            help="Automatically normalize uploaded tables to 3NF"
+        )
+
         if uploaded_files:
             for f in uploaded_files:
                 if f.name in st.session_state["databases"]: 
