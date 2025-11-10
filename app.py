@@ -14,8 +14,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.exc import SQLAlchemyError
-from PIL import Image
-import pytesseract
+
 
 # Optional: Gemini LLM import
 try:
@@ -500,8 +499,8 @@ if st.session_state.logged_in:
         with col_upload:
             uploaded_files = st.file_uploader(
                 "Select files to upload",
-                type=["db","sqlite","csv","xlsx","png","jpg","jpeg"],
-                accept_multiple_files=True,
+                type=["db","sqlite","csv","xlsx"]
+                st.info("💡 Quick Tips\n\n✓ Max: 50MB\n✓ Multi-file upload")
                 help="Supported: SQLite, CSV, Excel, Images (PNG/JPG)",
                 label_visibility="collapsed"
             )
