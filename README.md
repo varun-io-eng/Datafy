@@ -1,25 +1,22 @@
-# 🧠 Datafy: AI-Powered Text-to-SQL & Data Exploration Assistant  
-### Transform Natural Language into SQL Queries, Visual Insights, and Interactive Dashboards  
+# 🤖 AI Text-to-SQL Pro Assistant  
+
+An **AI-powered Streamlit application** that converts natural language queries into SQL commands, executes them across multiple databases, and provides instant visual analytics with interactive dashboards.
 
 ---
 
-## 🧾 Overview  
-**Datafy** is an AI-powered data analytics web app built with **Streamlit**, designed to turn **natural language questions into SQL queries** — and even go beyond by generating insights, visual dashboards, and database schema visualizations.  
-It enables **non-technical users** and **analysts** to explore structured data intuitively without needing to write SQL code or use complex BI tools.
+## 🚀 Overview  
+AI Text-to-SQL Pro Assistant bridges the gap between non-technical users and data-driven insights.  
+It leverages **Google Gemini LLM** to translate user questions into valid SQL queries, execute them securely, and visualize the results — all within an intuitive Streamlit interface.
 
 ---
 
-## 🚀 Key Features  
-- 🗂️ **Upload Data Files** — Supports CSV, Excel, and SQLite database formats  
-- 💬 **Ask Questions in Plain English** — Automatically converts natural language into SQL queries using **Google Gemini API**  
-- 🧠 **Universal SQL Mode** — Generate SQL even without uploading any dataset  
-- 🔒 **Safe Query Execution** — Only `SELECT` statements are allowed  
-- 📊 **Interactive Dashboards** — Auto-visualize results with charts and graphs (Plotly & Matplotlib)  
-- 🧩 **AI-Powered Explanations** — Get natural-language insights from your query results  
-- 🧱 **Schema & ER Diagram View** — Visualize database tables, columns, and relationships  
-- 🕒 **Chat History Panel** — View and reuse previous queries and their results  
-- 💾 **Downloadable Data** — Export results instantly as CSV  
-- 🎯 **Streamlined UI** — Clean, interactive, and professional interface built in Streamlit  
+## 🔑 Key Features  
+- 🧠 **Text-to-SQL Conversion:** Converts plain English into optimized SQL queries using **Gemini LLM**.  
+- 🧩 **Multi-Database Support:** Works with **SQLite, MySQL, PostgreSQL, and MSSQL**.  
+- 📊 **Data Visualization:** Creates interactive charts using **Plotly** and **Matplotlib**.  
+- 🔐 **User Authentication:** Secure login system with **SHA-256 password hashing**.  
+- 📘 **Schema Explorer:** Automatically detects and visualizes database schema relationships.  
+- 💬 **AI Insights:** Explains key findings from SQL query results.  
 
 ---
 
@@ -39,16 +36,16 @@ This app is especially useful for:
 
 ---
 
-## 🛠️ Technologies Used  
-- **Language:** Python  
-- **Frontend:** Streamlit  
-- **Backend:** Python + SQLite  
-- **Data Handling:** Pandas, NumPy, OpenPyXL  
-- **Visualization:** Plotly, Matplotlib  
-- **AI Integration:** Google Gemini API  
-- **ER Diagrams:** NetworkX + Graphviz  
-- **Deployment:** Streamlit Cloud  
-- **Version Control:** Git + GitHub  
+## 🏗️ Tech Stack  
+**Frontend:** Streamlit  
+**Backend:** Python, SQLAlchemy  
+**Databases:** SQLite, MySQL, PostgreSQL, MSSQL  
+**AI Model:** Google Gemini LLM  
+**Visualization:** Plotly, Matplotlib, NetworkX  
+**Data Processing:** Pandas, NumPy  
+**Authentication:** SQLite + SHA-256  
+**Deployment:** Streamlit Cloud / AWS  
+
 
 ---
 
