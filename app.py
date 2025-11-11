@@ -376,28 +376,37 @@ def load_database_to_sqlite(uploaded_file, auto_normalize=False):
         # -------------------------
         # Case 3: Excel Files
         # -------------------------
-        elif lower.endswith(".xlsx"):
-            sheets = safe_read_excel(uploaded_file)
-            for sheet_name, df in sheets.items():
-                df.to_sql(sheet_name, conn, if_exists="replace", index=False)
+       elif lower.endswith(".csv"):
+    import csv
 
-        else:
-            conn.close()
-            raise ValueError("Unsupported file type")
+    # Try multiple encodings
+    encodings = ["utf-8", "latin1", "windows-1252"]
+    read_success = False
+    df = None
 
-        conn.commit()
+    for enc in encodings:
+        try:
+            # Detect delimiter automatically
+            sample = uploaded_file.read(2048).decode(enc, errors="ignore")
+            uploaded_file.seek(0)
+            sniffer = csv.Sniffer()
+            delimiter = sniffer.sniff(sample).delimiter
 
-        # Get all table names safely
-        tables = [r[0] for r in conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table';"
-        ).fetchall()]
+            df = pd.read_csv(uploaded_file, encoding=enc, delimiter=delimiter)
+            if df.empty or df.columns.size == 0:
+                continue
+            read_success = True
+            break
+        except Exception:
+            uploaded_file.seek(0)
+            continue
 
-        conn.close()
-        return target_db, tables
+    if not read_success or df is None or df.empty:
+        raise ValueError("CSV file could not be read — please check formatting or encoding.")
 
-    except Exception as e:
-        conn.close()
-        raise e
+    # Write to SQLite database
+    df.to_sql(base or "data", conn, if_exists="replace", index=False)
+
 
 def get_schema_text_from_path(db_path):
     with sqlite3.connect(db_path) as conn:
