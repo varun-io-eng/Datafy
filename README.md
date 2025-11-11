@@ -93,9 +93,10 @@ This app is especially useful for:
 
 ## 👨‍💻 Author  
 **Varun Khera**  
-📧 varunkhera.20@gmail.com
-💼 https://www.linkedin.com/in/varun-khera/  
- 
+
+📧 [varunkhera.20@gmail.com](mailto:varunkhera.20@gmail.com)  
+🚀 [Live App](https://datafy-ermmb27jxggdw3ay3bgdvr.streamlit.app/)
+
 
 ---
 
