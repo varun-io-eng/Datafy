@@ -341,6 +341,7 @@ def load_database_to_sqlite(uploaded_file, auto_normalize=False):
     orig_name = uploaded_file.name
     base = _safe_filename(orig_name.rsplit(".", 1)[0])
     target_db = f"{UPLOAD_DB_PREFIX}{base}.db"
+
     uploaded_file.seek(0, io.SEEK_END)
     size = uploaded_file.tell()
     uploaded_file.seek(0)
@@ -349,51 +350,71 @@ def load_database_to_sqlite(uploaded_file, auto_normalize=False):
 
     lower = orig_name.lower()
     conn = sqlite3.connect(target_db)
-    
+
     try:
+        # -------------------------
+        # Case 1: SQLite or DB files
+        # -------------------------
         if lower.endswith((".db", ".sqlite")):
             conn.close()
             with open(target_db, "wb") as f:
                 f.write(uploaded_file.getbuffer())
             conn = sqlite3.connect(target_db)
-            
+
+        # -------------------------
+        # Case 2: CSV Files
+        # -------------------------
         elif lower.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
+            try:
+                df = pd.read_csv(uploaded_file, encoding="utf-8")
+            except UnicodeDecodeError:
+                # Handle non-UTF encodings like ANSI or Latin1
+                df = pd.read_csv(uploaded_file, encoding="latin1")
+
             df.to_sql(base or "data", conn, if_exists="replace", index=False)
-                
+
+        # -------------------------
+        # Case 3: Excel Files
+        # -------------------------
         elif lower.endswith(".xlsx"):
             sheets = safe_read_excel(uploaded_file)
             for sheet_name, df in sheets.items():
                 df.to_sql(sheet_name, conn, if_exists="replace", index=False)
+
         else:
             conn.close()
             raise ValueError("Unsupported file type")
-            
+
         conn.commit()
-        tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
+
+        # Get all table names safely
+        tables = [r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table';"
+        ).fetchall()]
+
         conn.close()
         return target_db, tables
-        
+
     except Exception as e:
         conn.close()
         raise e
 
-def get_schema_text_from_engine(engine):
-    inspector = inspect(engine)
-    tables = inspector.get_table_names()
-    lines = []
-    for t in tables:
-        cols = [c["name"] for c in inspector.get_columns(t)]
-        lines.append(f"{t}({', '.join(cols)})")
-    return "\n".join(lines)
-
 def get_schema_text_from_path(db_path):
     with sqlite3.connect(db_path) as conn:
-        tables = [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
+        tables = [
+            r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table';"
+            ).fetchall()
+        ]
         lines = []
         for t in tables:
-            cols = [c[1] for c in conn.execute(f"PRAGMA table_info({t});").fetchall()]
-            lines.append(f"{t}({', '.join(cols)})")
+            try:
+                cols = [
+                    c[1] for c in conn.execute(f"PRAGMA table_info('{t}');").fetchall()
+                ]
+                lines.append(f"{t}({', '.join(cols)})")
+            except sqlite3.OperationalError:
+                continue  # skip if table info can't be read safely
     return "\n".join(lines)
 
 
