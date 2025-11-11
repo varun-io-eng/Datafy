@@ -1,8 +1,3 @@
-"""
-AI Text-to-SQL Pro Assistant - Production-Ready Version
-Fixed session management and dataset replacement
-"""
-
 import os
 import io
 import csv
