@@ -1,3 +1,8 @@
+"""
+AI Text-to-SQL Pro Assistant - Production-Ready Version
+Fixed session management and dataset replacement
+"""
+
 import os
 import io
 import csv
@@ -1258,6 +1263,15 @@ if st.session_state.logged_in:
     # ====================================
     # TAB 2: SCHEMA EXPLORER
     # ====================================
+    # ====================================
+    # TAB 2: SCHEMA EXPLORER
+    # ====================================
+    # ====================================
+    # TAB 2: SCHEMA EXPLORER
+    # ====================================
+    # ====================================
+    # TAB 2: SCHEMA EXPLORER
+    # ====================================
     with tab2:
         st.markdown("### 📘 Database Schema Overview")
         
@@ -1270,7 +1284,7 @@ if st.session_state.logged_in:
             schema_text = ""
         
         if schema_text:
-            st.markdown("#### 📋 Complete Schema")
+            st.markdown("#### 📋 Complete Schema Summary")
             st.code(schema_text, language="sql")
             
             st.markdown("---")
@@ -1278,36 +1292,133 @@ if st.session_state.logged_in:
             
             for t in tables:
                 with st.expander(f"🗂️ Table: **{t}**", expanded=False):
-                    if selected_db_type == "sqlite" and selected_db_path:
-                        try:
+                    try:
+                        if selected_db_type == "sqlite" and selected_db_path:
                             with sqlite3.connect(selected_db_path) as conn:
                                 # Get column info
                                 cols_info = conn.execute(f"PRAGMA table_info('{t}');").fetchall()
-                                df_cols = pd.DataFrame(
-                                    cols_info,
-                                    columns=["ID", "Name", "Type", "Not Null", "Default", "Primary Key"]
-                                )
                                 
-                                st.markdown("**📊 Column Details**")
-                                st.dataframe(
-                                    df_cols[["Name", "Type", "Not Null", "Primary Key"]],
-                                    use_container_width=True,
-                                    hide_index=True
-                                )
-                                
-                                # Get row count
-                                row_count = conn.execute(f"SELECT COUNT(*) FROM '{t}'").fetchone()[0]
-                                st.metric("📝 Total Rows", f"{row_count:,}")
-                                
-                                # Get foreign keys
-                                fks = conn.execute(f"PRAGMA foreign_key_list('{t}');").fetchall()
-                                if fks:
-                                    st.markdown("**🔗 Foreign Key Relationships**")
-                                    for fk in fks:
-                                        st.caption(f"• {fk[3]} → {fk[2]}.{fk[4]}")
-                        except Exception as e:
-                            st.error(f"Error loading table info: {e}")
-
+                                if cols_info:
+                                    schema_data = []
+                                    
+                                    for col in cols_info:
+                                        try:
+                                            if len(col) >= 6:
+                                                col_name = col[1]
+                                                col_type = col[2]
+                                                not_null = col[3]
+                                                default_val = col[4]
+                                            else:
+                                                col_name = str(col[1]) if len(col) > 1 else "unknown"
+                                                col_type = str(col[2]) if len(col) > 2 else "TEXT"
+                                                not_null = col[3] if len(col) > 3 else 0
+                                                default_val = col[4] if len(col) > 4 else None
+                                            
+                                            schema_data.append({
+                                                "Column Name": col_name,
+                                                "Data Type": col_type if col_type else "TEXT",
+                                                "Not Null": "Yes" if (not_null == 1 or not_null is True) else "No",
+                                                "Default Value": str(default_val) if default_val else ""
+                                            })
+                                        except Exception as col_err:
+                                            st.error(f"Error parsing column: {col_err}")
+                                    
+                                    st.markdown("**📊 Column Schema**")
+                                    df_schema = pd.DataFrame(schema_data)
+                                    st.dataframe(df_schema, use_container_width=True, hide_index=True)
+                                    
+                                    # Show metrics
+                                    col1, col2 = st.columns(2)
+                                    with col1:
+                                        st.metric("📝 Total Columns", len(schema_data))
+                                    with col2:
+                                        try:
+                                            row_count = conn.execute(f"SELECT COUNT(*) FROM '{t}'").fetchone()[0]
+                                            st.metric("📊 Total Rows", f"{row_count:,}")
+                                        except:
+                                            st.metric("📊 Total Rows", "N/A")
+                                    
+                                    # Show data type distribution
+                                    st.markdown("---")
+                                    st.markdown("**🔢 Data Type Distribution**")
+                                    
+                                    type_counts = {}
+                                    for item in schema_data:
+                                        dtype = item["Data Type"]
+                                        type_counts[dtype] = type_counts.get(dtype, 0) + 1
+                                    
+                                    for dtype, count in sorted(type_counts.items()):
+                                        st.caption(f"• **{dtype}**: {count} column(s)")
+                                    
+                                    # Sample data preview
+                                    st.markdown("---")
+                                    st.markdown("**📄 Sample Data (First 5 Rows)**")
+                                    try:
+                                        sample_df = pd.read_sql_query(f"SELECT * FROM '{t}' LIMIT 5", conn)
+                                        st.dataframe(sample_df, use_container_width=True, hide_index=True)
+                                    except Exception as e:
+                                        st.error(f"Could not load sample data: {e}")
+                                else:
+                                    st.warning("⚠️ Could not retrieve schema information")
+                        
+                        elif selected_db_engine:
+                            inspector = inspect(selected_db_engine)
+                            
+                            # Get columns
+                            columns = inspector.get_columns(t)
+                            
+                            # Build schema dataframe
+                            schema_data = []
+                            for col in columns:
+                                schema_data.append({
+                                    "Column Name": col['name'],
+                                    "Data Type": str(col['type']),
+                                    "Nullable": "Yes" if col.get('nullable', True) else "No",
+                                    "Default Value": str(col.get('default', '')) if col.get('default') else ""
+                                })
+                            
+                            st.markdown("**📊 Column Schema**")
+                            df_schema = pd.DataFrame(schema_data)
+                            st.dataframe(df_schema, use_container_width=True, hide_index=True)
+                            
+                            # Show metrics
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.metric("📝 Total Columns", len(schema_data))
+                            with col2:
+                                try:
+                                    count_query = f"SELECT COUNT(*) as cnt FROM {t}"
+                                    row_count = pd.read_sql_query(count_query, selected_db_engine).iloc[0]['cnt']
+                                    st.metric("📊 Total Rows", f"{row_count:,}")
+                                except:
+                                    st.metric("📊 Total Rows", "N/A")
+                            
+                            # Show data type distribution
+                            st.markdown("---")
+                            st.markdown("**🔢 Data Type Distribution**")
+                            
+                            type_counts = {}
+                            for item in schema_data:
+                                dtype = item["Data Type"]
+                                type_counts[dtype] = type_counts.get(dtype, 0) + 1
+                            
+                            for dtype, count in sorted(type_counts.items()):
+                                st.caption(f"• **{dtype}**: {count} column(s)")
+                            
+                            # Sample data preview
+                            st.markdown("---")
+                            st.markdown("**📄 Sample Data (First 5 Rows)**")
+                            try:
+                                sample_df = pd.read_sql_query(f"SELECT * FROM {t} LIMIT 5", selected_db_engine)
+                                st.dataframe(sample_df, use_container_width=True, hide_index=True)
+                            except Exception as e:
+                                st.error(f"Could not load sample data: {e}")
+                    
+                    except Exception as e:
+                        st.error(f"❌ Error loading table info: {str(e)}")
+                        import traceback
+                        with st.expander("Show Error Details"):
+                            st.code(traceback.format_exc())
     # ====================================
     # TAB 3: DATA INSIGHTS
     # ====================================
@@ -1619,6 +1730,12 @@ if st.session_state.logged_in:
     # ====================================
     # TAB 6: DASHBOARD
     # ====================================
+    # ====================================
+    # TAB 6: DASHBOARD
+    # ====================================
+# ====================================
+    # TAB 6: DASHBOARD
+    # ====================================
     with tab6:
         st.markdown("### 🗺️ Comprehensive Database Dashboard")
 
@@ -1666,7 +1783,7 @@ if st.session_state.logged_in:
 
             # ---- Table Summaries ----
             st.markdown("---")
-            st.markdown("### 📋 Table Summaries")
+            st.markdown("### 📋 Detailed Table Information")
 
             for t in tables:
                 with st.expander(f"🗂️ Table: **{t}**", expanded=False):
@@ -1695,6 +1812,106 @@ if st.session_state.logged_in:
                         st.markdown("**🔢 Column Types:**")
                         for dtype, count in type_counts.items():
                             st.caption(f"• {dtype}: {count}")
+
+                    # ---- SCHEMA DETAILS WITH PRIMARY KEYS ----
+                    st.markdown("---")
+                    st.markdown("**🔍 Schema Details**")
+                    
+                    try:
+                        if selected_db_type == "sqlite" and selected_db_path:
+                            with sqlite3.connect(selected_db_path) as conn:
+                                # Get column info with primary keys
+                                cols_info = conn.execute(f"PRAGMA table_info('{t}');").fetchall()
+                                
+                                if cols_info:
+                                    schema_data = []
+                                    pk_columns = []
+                                    
+                                    for col in cols_info:
+                                        # col format: (cid, name, type, notnull, dflt_value, pk)
+                                        col_id, col_name, col_type, not_null, default_val, is_pk = col
+                                        
+                                        if is_pk:
+                                            pk_columns.append(col_name)
+                                        
+                                        schema_data.append({
+                                            "Column": col_name,
+                                            "Type": col_type,
+                                            "Not Null": "Yes" if not_null else "No",
+                                            "Primary Key": "🔑" if is_pk else ""
+                                        })
+                                    
+                                    df_schema = pd.DataFrame(schema_data)
+                                    st.dataframe(df_schema, use_container_width=True, hide_index=True)
+                                    
+                                    # Show primary keys explicitly
+                                    if pk_columns:
+                                        st.success(f"🔑 **Primary Key(s):** {', '.join(pk_columns)}")
+                                    else:
+                                        st.info("ℹ️ No primary key defined for this table")
+                                    
+                                    # Get foreign keys
+                                    st.markdown("**🔗 Foreign Key Relationships:**")
+                                    fk_results = conn.execute(f"PRAGMA foreign_key_list('{t}');").fetchall()
+                                    
+                                    if fk_results:
+                                        for fk in fk_results:
+                                            # fk format: (id, seq, table, from, to, on_update, on_delete, match)
+                                            fk_id, seq, ref_table, from_col, to_col = fk[0], fk[1], fk[2], fk[3], fk[4]
+                                            st.caption(f"• **{from_col}** → **{ref_table}.{to_col}**")
+                                    else:
+                                        st.caption("• No foreign keys defined")
+                                else:
+                                    st.warning("⚠️ Could not retrieve schema information")
+                        
+                        elif selected_db_engine:
+                            inspector = inspect(selected_db_engine)
+                            
+                            # Get columns
+                            columns = inspector.get_columns(t)
+                            
+                            # Get primary key
+                            pk_constraint = inspector.get_pk_constraint(t)
+                            pk_columns = pk_constraint.get('constrained_columns', []) if pk_constraint else []
+                            
+                            # Build schema dataframe
+                            schema_data = []
+                            for col in columns:
+                                schema_data.append({
+                                    "Column": col['name'],
+                                    "Type": str(col['type']),
+                                    "Nullable": "Yes" if col.get('nullable', True) else "No",
+                                    "Primary Key": "🔑" if col['name'] in pk_columns else ""
+                                })
+                            
+                            df_schema = pd.DataFrame(schema_data)
+                            st.dataframe(df_schema, use_container_width=True, hide_index=True)
+                            
+                            # Show primary keys
+                            if pk_columns:
+                                st.success(f"🔑 **Primary Key(s):** {', '.join(pk_columns)}")
+                            else:
+                                st.info("ℹ️ No primary key defined for this table")
+                            
+                            # Get foreign keys
+                            st.markdown("**🔗 Foreign Key Relationships:**")
+                            fks = inspector.get_foreign_keys(t)
+                            
+                            if fks:
+                                for fk in fks:
+                                    ref_table = fk.get('referred_table')
+                                    const_cols = fk.get('constrained_columns', [])
+                                    ref_cols = fk.get('referred_columns', [])
+                                    
+                                    for from_col, to_col in zip(const_cols, ref_cols):
+                                        st.caption(f"• **{from_col}** → **{ref_table}.{to_col}**")
+                            else:
+                                st.caption("• No foreign keys defined")
+                    
+                    except Exception as e:
+                        st.error(f"❌ Error retrieving schema: {str(e)}")
+                        import traceback
+                        st.code(traceback.format_exc())
 
                     # Quick visualization for numeric columns
                     numeric = df_dash.select_dtypes(include="number").columns.tolist()
@@ -1730,9 +1947,15 @@ if st.session_state.logged_in:
                         except Exception as e:
                             st.caption(f"⚠️ Could not generate chart: {e}")
 
-            # ---- ER Diagram ----
+            # ---- ER DIAGRAM WITH ENHANCED DEBUGGING ----
             st.markdown("---")
             st.markdown("### 🗺️ Entity Relationship Diagram")
+            
+            # Debug expander
+            with st.expander("🔧 Debug Information", expanded=False):
+                st.write(f"**Database Type:** {selected_db_type}")
+                st.write(f"**Database Path:** {selected_db_path if selected_db_path else 'Using Engine'}")
+                st.write(f"**Tables Found:** {', '.join(tables)}")
 
             try:
                 if selected_db_type == "sqlite" and selected_db_path:
@@ -1741,75 +1964,190 @@ if st.session_state.logged_in:
                     engine = selected_db_engine
 
                 inspector = inspect(engine)
-                G = nx.Graph()
+                G = nx.DiGraph()
 
                 # Add all tables
-                for table in inspector.get_table_names():
+                all_tables = inspector.get_table_names()
+                
+                # Filter out system tables
+                all_tables = [t for t in all_tables if not t.startswith("sqlite_")]
+                
+                for table in all_tables:
                     G.add_node(table, node_type="table")
 
-                # Add foreign keys
-                for table in inspector.get_table_names():
+                # Track relationships
+                relationships_found = 0
+                relationship_details = []
+
+                # Method 1: SQLAlchemy Inspector
+                st.write("**🔍 Method 1: Checking via SQLAlchemy Inspector...**")
+                for table in all_tables:
                     try:
                         fks = inspector.get_foreign_keys(table)
+                        if fks:
+                            st.caption(f"✓ Table '{table}' has {len(fks)} foreign key(s)")
                         for fk in fks:
                             ref_table = fk.get("referred_table")
-                            if ref_table:
-                                G.add_edge(table, ref_table, relation="foreign_key")
-                    except:
-                        pass
+                            const_cols = fk.get("constrained_columns", [])
+                            ref_cols = fk.get("referred_columns", [])
+                            
+                            if ref_table and ref_table in all_tables:
+                                if not G.has_edge(table, ref_table):
+                                    G.add_edge(table, ref_table, relation="foreign_key")
+                                    relationships_found += 1
+                                    relationship_details.append(f"FK: {table} ({', '.join(const_cols)}) → {ref_table} ({', '.join(ref_cols)})")
+                    except Exception as e:
+                        st.caption(f"⚠️ Could not check FKs for '{table}': {str(e)}")
 
+                # Method 2: SQLite PRAGMA
+                if selected_db_type == "sqlite" and selected_db_path:
+                    st.write("**🔍 Method 2: Checking via SQLite PRAGMA...**")
+                    try:
+                        with sqlite3.connect(selected_db_path) as conn:
+                            for table in all_tables:
+                                try:
+                                    fk_results = conn.execute(f"PRAGMA foreign_key_list('{table}');").fetchall()
+                                    
+                                    if fk_results:
+                                        st.caption(f"✓ Table '{table}' has {len(fk_results)} FK constraint(s)")
+                                        
+                                    for fk in fk_results:
+                                        ref_table = fk[2]
+                                        from_col = fk[3]
+                                        to_col = fk[4]
+                                        
+                                        if ref_table and ref_table in all_tables:
+                                            if not G.has_edge(table, ref_table):
+                                                G.add_edge(table, ref_table, relation="foreign_key")
+                                                relationships_found += 1
+                                                relationship_details.append(f"PRAGMA FK: {table}.{from_col} → {ref_table}.{to_col}")
+                                except Exception as e:
+                                    st.caption(f"⚠️ PRAGMA check failed for '{table}': {str(e)}")
+                    except Exception as e:
+                        st.error(f"SQLite connection error: {str(e)}")
+
+                # Method 3: Heuristic Column Matching
+                st.write("**🔍 Method 3: Checking via Column Name Patterns...**")
+                if relationships_found == 0:
+                    for table in all_tables:
+                        try:
+                            columns = inspector.get_columns(table)
+                            for col in columns:
+                                col_name = col['name'].lower()
+                                
+                                for other_table in all_tables:
+                                    if other_table != table:
+                                        other_lower = other_table.lower()
+                                        
+                                        # Multiple pattern matching
+                                        patterns = [
+                                            f"{other_lower}_id",
+                                            f"{other_lower}id",
+                                            f"id_{other_lower}",
+                                            f"{other_lower}_key",
+                                        ]
+                                        
+                                        # Also try singular/plural variations
+                                        if other_lower.endswith('s'):
+                                            patterns.append(f"{other_lower[:-1]}_id")
+                                            patterns.append(f"{other_lower[:-1]}id")
+                                        else:
+                                            patterns.append(f"{other_lower}s_id")
+                                        
+                                        for pattern in patterns:
+                                            if col_name == pattern or pattern in col_name:
+                                                if not G.has_edge(table, other_table):
+                                                    G.add_edge(table, other_table, relation="inferred")
+                                                    relationships_found += 1
+                                                    relationship_details.append(f"Inferred: {table}.{col_name} → {other_table}")
+                                                    st.caption(f"✓ Inferred: {table}.{col_name} likely references {other_table}")
+                                                break
+                        except Exception as e:
+                            st.caption(f"⚠️ Column check failed for '{table}': {str(e)}")
+                
+                if relationships_found == 0:
+                    st.warning("⚠️ No relationships detected by any method")
+
+                # Display relationship summary
+                if relationship_details:
+                    st.markdown("**📋 Relationships Detected:**")
+                    for rel in relationship_details:
+                        st.caption(f"• {rel}")
+
+                # Draw the diagram
                 if len(G.nodes()) > 0:
+                    st.markdown("---")
                     fig, ax = plt.subplots(figsize=(16, 10))
 
                     # Layout
-                    if len(G.nodes()) <= 10:
-                        pos = nx.spring_layout(G, k=2, iterations=50, seed=42)
+                    if len(G.nodes()) <= 5:
+                        pos = nx.circular_layout(G, scale=2)
+                    elif len(G.nodes()) <= 10:
+                        pos = nx.spring_layout(G, k=2.5, iterations=100, seed=42)
                     else:
                         pos = nx.kamada_kawai_layout(G)
 
-                    nx.draw_networkx_nodes(G, pos, node_color='#3b82f6', node_size=4000, alpha=0.9, ax=ax)
-                    nx.draw_networkx_labels(G, pos, font_size=11, font_weight='bold', font_color='white', ax=ax)
-                    nx.draw_networkx_edges(G, pos, edge_color='#94a3b8', width=2.5, alpha=0.6, ax=ax, style='solid')
+                    # Draw nodes
+                    nx.draw_networkx_nodes(G, pos, node_color='#3b82f6', node_size=5000, alpha=0.9, ax=ax)
+                    
+                    # Draw labels
+                    nx.draw_networkx_labels(G, pos, font_size=12, font_weight='bold', font_color='white', ax=ax)
+                    
+                    # Draw edges
+                    if len(G.edges()) > 0:
+                        nx.draw_networkx_edges(
+                            G, pos, 
+                            edge_color='#94a3b8', 
+                            width=3, 
+                            alpha=0.7, 
+                            ax=ax, 
+                            arrows=True,
+                            arrowsize=25,
+                            arrowstyle='->',
+                            connectionstyle='arc3,rad=0.15',
+                            node_size=5000
+                        )
 
-                    ax.set_title("Database Schema Relationships", fontsize=20, fontweight='bold', pad=20)
+                        # Edge labels
+                        edge_labels = nx.get_edge_attributes(G, 'relation')
+                        if edge_labels:
+                            nx.draw_networkx_edge_labels(
+                                G, pos, 
+                                edge_labels, 
+                                font_size=9, 
+                                font_color='#1e40af',
+                                font_weight='bold',
+                                ax=ax
+                            )
+
+                    ax.set_title("Database Schema Relationships", fontsize=22, fontweight='bold', pad=20)
                     ax.axis('off')
                     ax.set_facecolor('#f8fafc')
                     fig.patch.set_facecolor('#f8fafc')
                     plt.tight_layout()
 
                     st.pyplot(fig)
-                    st.info(f"📊 Displaying {len(G.nodes())} tables and {len(G.edges())} relationships")
+                    
+                    # Summary
+                    if relationships_found > 0:
+                        st.success(f"✅ Displaying {len(G.nodes())} tables and {len(G.edges())} relationships")
+                        
+                        with st.expander("🔗 View All Relationships", expanded=True):
+                            for edge in G.edges(data=True):
+                                from_table, to_table, data = edge
+                                rel_type = data.get('relation', 'unknown')
+                                icon = "🔑" if rel_type == "foreign_key" else "🔍"
+                                st.caption(f"{icon} **{from_table}** → **{to_table}** ({rel_type})")
+                    else:
+                        st.warning("⚠️ No relationships detected. Possible reasons:")
+                        st.caption("• Tables don't have foreign key constraints defined")
+                        st.caption("• Database doesn't enforce referential integrity")
+                        st.caption("• Column naming doesn't follow common patterns")
+                        st.caption("• Data was imported without preserving relationships")
                 else:
                     st.info("📊 No tables found to visualize")
 
             except Exception as e:
-                st.warning(f"⚠️ Could not generate ER diagram: {str(e)}")
-                st.caption("💡 This feature works best with databases that have foreign key relationships")
-                    
-                if selected_db_engine:
-                        try:
-                            inspector = inspect(selected_db_engine)
-                            
-                            # Column information
-                            cols = inspector.get_columns(t)
-                            df_cols = pd.DataFrame(cols)
-                            st.markdown("**📊 Column Details**")
-                            st.dataframe(df_cols[["name", "type"]], use_container_width=True, hide_index=True)
-                            
-                            # Primary keys
-                            pk = inspector.get_pk_constraint(t)
-                            if pk and pk.get("constrained_columns"):
-                                st.markdown("**🔑 Primary Keys**")
-                                st.write(", ".join(pk["constrained_columns"]))
-                            
-                            # Foreign keys
-                            fks = inspector.get_foreign_keys(t)
-                            if fks:
-                                st.markdown("**🔗 Foreign Key Relationships**")
-                                for fk in fks:
-                                    ref_table = fk.get("referred_table")
-                                    ref_cols = fk.get("referred_columns", [])
-                                    st.caption(f"• → {ref_table} ({', '.join(ref_cols)})")
-                        
-                        except Exception as e:
-                            st.error(f"Error loading table info: {e}")
+                st.error(f"❌ Error generating ER diagram: {str(e)}")
+                import traceback
+                st.code(traceback.format_exc())
